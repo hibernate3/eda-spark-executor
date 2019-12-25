@@ -8,7 +8,7 @@ import java.util.{Calendar, Date, Properties}
 
 object HiveExecutor extends Serializable {
   def main(args: Array[String]): Unit = {
-    //    val sqlContext = SparkSession.builder().master("local[2]").appName(this.getClass.getSimpleName).enableHiveSupport().getOrCreate()
+//    val sqlContext = SparkSession.builder().master("local[2]").appName(this.getClass.getSimpleName).enableHiveSupport().getOrCreate()
     val sqlContext = SparkSession.builder().appName(this.getClass.getSimpleName).enableHiveSupport().getOrCreate()
     sqlContext.sparkContext.setLogLevel("WARN")
 
@@ -82,7 +82,7 @@ object HiveExecutor extends Serializable {
     var sql: String = ""
     if (mode == 0) {
       //全量更新
-      sql = "SELECT rowkey, stopTime, intime, outtime, courtid, entermodetext, exitmodetext, carporttypetext, consumemoney, payedmoney " +
+      sql = "SELECT rowkey, carnum, stopTime, intime, outtime, courtid, entermodetext, exitmodetext, carporttypetext, consumemoney, payedmoney " +
         "FROM community.community_car " +
         "WHERE carporttypetext!='' " +
         "AND exitmodetext!='' " +
@@ -91,10 +91,11 @@ object HiveExecutor extends Serializable {
         "AND intime!='' " +
         "AND outtime!='' " +
         "AND courtid!='' " +
+        "AND carnum!='' " +
         "AND payedmoney!=''"
     } else {
       //增量更新，只拉取昨日数据
-      sql = "SELECT rowkey, stopTime, intime, outtime, courtid, entermodetext, exitmodetext, carporttypetext, consumemoney, payedmoney " +
+      sql = "SELECT rowkey, carnum, stopTime, intime, outtime, courtid, entermodetext, exitmodetext, carporttypetext, consumemoney, payedmoney " +
         "FROM community.community_car " +
         "WHERE carporttypetext!='' " +
         "AND exitmodetext!='' " +
@@ -104,6 +105,7 @@ object HiveExecutor extends Serializable {
         "AND outtime!='' " +
         "AND courtid!='' " +
         "AND payedmoney!='' " +
+        "AND carnum!='' " +
         "AND outtime BETWEEN from_unixtime(unix_timestamp()-1*60*60*24, 'yyyy-MM-dd') AND from_unixtime(unix_timestamp(), 'yyyy-MM-dd')"
     }
 
@@ -168,7 +170,19 @@ object HiveExecutor extends Serializable {
       }
     })
 
-    val tempResult = sparkSession.sql("SELECT rowkey, stopTimeLevel(stopTime) stopTimeLevel, intimeLevel(intime) intimeLevel, timeDay(outtime) outtime, entermodetext, exitmodetext, carporttypetext, consumemoney, payedmoney, courtid FROM car_parking")
+    sparkSession.udf.register("carEnergy", (str: String) => {
+      try {
+        if(str.length > 7) {
+          "新能源"
+        } else {
+          "非新能源"
+        }
+      } catch {
+        case e: Exception => "其他"
+      }
+    })
+
+    val tempResult = sparkSession.sql("SELECT rowkey, carnum, carEnergy(carnum) car_energy, stopTimeLevel(stopTime) stopTimeLevel, intimeLevel(intime) intimeLevel, timeDay(outtime) outtime, entermodetext, exitmodetext, carporttypetext, consumemoney, payedmoney, courtid FROM car_parking")
     tempResult.createOrReplaceTempView("car_parking")
     tempResult.show()
 
@@ -191,6 +205,10 @@ object HiveExecutor extends Serializable {
     //车辆缴费
     resultDf = sparkSession.sql("SELECT outtime, courtid, SUM(payedmoney) as payedmoney_total, SUM(consumemoney) as consumemoney_total FROM car_parking GROUP BY outtime, courtid")
     writeToMysql("cbox_smartvillage_v0.1", "car_parking_pay_result", resultDf, mode)
+
+    //新能源车通行
+    resultDf = sparkSession.sql("SELECT outtime, courtid, carnum, car_energy, COUNT(DISTINCT rowkey) as countNum FROM car_parking GROUP BY car_energy, outtime, courtid, carnum")
+    writeToMysql("cbox_smartvillage_v0.1", "car_parking_energy_result", resultDf, mode)
   }
 
   //  def executeCarParking(sparkSession: SparkSession): Unit = {
