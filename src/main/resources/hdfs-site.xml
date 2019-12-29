@@ -8,11 +8,11 @@
   </property>
   <property>
     <name>dfs.namenode.servicerpc-address</name>
-    <value>bigdata-sit-54:8022</value>
+    <value>bigdata-prd-cdh-06:8022</value>
   </property>
   <property>
     <name>dfs.https.address</name>
-    <value>bigdata-sit-54:50470</value>
+    <value>bigdata-prd-cdh-06:50470</value>
   </property>
   <property>
     <name>dfs.https.port</name>
@@ -20,7 +20,7 @@
   </property>
   <property>
     <name>dfs.namenode.http-address</name>
-    <value>bigdata-sit-54:50070</value>
+    <value>bigdata-prd-cdh-06:50070</value>
   </property>
   <property>
     <name>dfs.replication</name>

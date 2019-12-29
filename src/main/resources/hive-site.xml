@@ -4,7 +4,7 @@
 <configuration>
   <property>
     <name>hive.metastore.uris</name>
-    <value>thrift://bigdata-sit-54:9083,thrift://bigdata-sit-55:9083</value>
+    <value>thrift://bigdata-prd-cdh-02:9083,thrift://bigdata-prd-cdh-03:9083</value>
   </property>
   <property>
     <name>hive.metastore.client.socket.timeout</name>
@@ -12,7 +12,7 @@
   </property>
   <property>
     <name>hive.metastore.warehouse.dir</name>
-    <value>/user/hive/warehouse</value>
+    <value>/data/hive/warehouse</value>
   </property>
   <property>
     <name>hive.warehouse.subdir.inherit.perms</name>
@@ -140,7 +140,7 @@
   </property>
   <property>
     <name>spark.executor.memory</name>
-    <value>500013465</value>
+    <value>1052613017</value>
   </property>
   <property>
     <name>spark.driver.memory</name>
@@ -156,7 +156,7 @@
   </property>
   <property>
     <name>spark.yarn.executor.memoryOverhead</name>
-    <value>84</value>
+    <value>177</value>
   </property>
   <property>
     <name>spark.dynamicAllocation.enabled</name>
@@ -184,7 +184,7 @@
   </property>
   <property>
     <name>hive.zookeeper.quorum</name>
-    <value>bigdata-sit-56,bigdata-sit-55,bigdata-sit-54</value>
+    <value>bigdata-prd-cdh-04,bigdata-prd-cdh-06,bigdata-prd-cdh-05,bigdata-prd-cdh-07</value>
   </property>
   <property>
     <name>hive.zookeeper.client.port</name>
@@ -196,7 +196,7 @@
   </property>
   <property>
     <name>hbase.zookeeper.quorum</name>
-    <value>bigdata-sit-56,bigdata-sit-55,bigdata-sit-54</value>
+    <value>bigdata-prd-cdh-04,bigdata-prd-cdh-06,bigdata-prd-cdh-05,bigdata-prd-cdh-07</value>
   </property>
   <property>
     <name>hbase.zookeeper.property.clientPort</name>

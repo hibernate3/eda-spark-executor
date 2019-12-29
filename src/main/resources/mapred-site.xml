@@ -60,7 +60,7 @@
   </property>
   <property>
     <name>mapreduce.job.reduces</name>
-    <value>4</value>
+    <value>10</value>
   </property>
   <property>
     <name>mapreduce.task.io.sort.mb</name>
@@ -80,19 +80,19 @@
   </property>
   <property>
     <name>mapreduce.jobhistory.address</name>
-    <value>bigdata-sit-55:10020</value>
+    <value>bigdata-prd-cdh-03:10020</value>
   </property>
   <property>
     <name>mapreduce.jobhistory.webapp.address</name>
-    <value>bigdata-sit-55:19888</value>
+    <value>bigdata-prd-cdh-03:19888</value>
   </property>
   <property>
     <name>mapreduce.jobhistory.webapp.https.address</name>
-    <value>bigdata-sit-55:19890</value>
+    <value>bigdata-prd-cdh-03:19890</value>
   </property>
   <property>
     <name>mapreduce.jobhistory.admin.address</name>
-    <value>bigdata-sit-55:10033</value>
+    <value>bigdata-prd-cdh-03:10033</value>
   </property>
   <property>
     <name>mapreduce.framework.name</name>
@@ -136,7 +136,7 @@
   </property>
   <property>
     <name>mapreduce.map.memory.mb</name>
-    <value>2048</value>
+    <value>3072</value>
   </property>
   <property>
     <name>mapreduce.map.cpu.vcores</name>
@@ -144,7 +144,7 @@
   </property>
   <property>
     <name>mapreduce.reduce.memory.mb</name>
-    <value>4096</value>
+    <value>6144</value>
   </property>
   <property>
     <name>mapreduce.reduce.cpu.vcores</name>

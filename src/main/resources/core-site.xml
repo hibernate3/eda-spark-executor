@@ -4,7 +4,7 @@
 <configuration>
   <property>
     <name>fs.defaultFS</name>
-    <value>hdfs://bigdata-sit-54:8020</value>
+    <value>hdfs://bigdata-prd-cdh-06:8020</value>
   </property>
   <property>
     <name>fs.trash.interval</name>
@@ -141,21 +141,5 @@
     <name>hadoop.ssl.client.conf</name>
     <value>ssl-client.xml</value>
     <final>true</final>
-  </property>
-  <property>
-    <name>hadoop.proxyuser.livy.groups</name>
-    <value>*</value>
-  </property>
-  <property>
-    <name>hadoop.proxyuser.livy.hosts</name>
-    <value>*</value>
-  </property>
-  <property>
-    <name>hadoop.proxyuser.admin.hosts</name>
-    <value>*</value>
-  </property>
-  <property>
-    <name>hadoop.proxyuser.admin.groups</name>
-    <value>*</value>
   </property>
 </configuration>
