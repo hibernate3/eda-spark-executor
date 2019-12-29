@@ -16,7 +16,7 @@ object HiveExecutor extends Serializable {
     var syncMode = 0
 
     if (today > "2020-01-25") { //上线发布日期
-      syncMode = 1
+      syncMode = 1 //增量更新
     }
 
     executeICCard(sqlContext, syncMode)
