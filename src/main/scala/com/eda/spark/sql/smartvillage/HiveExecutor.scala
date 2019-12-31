@@ -167,6 +167,20 @@ object HiveExecutor extends Serializable {
       }
     })
 
+    sparkSession.udf.register("carSubEnergy", (str: String) => {
+      try {
+        if(str.substring(2,3) == "D") {
+          "纯电动"
+        } else if (str.substring(2,3) == "F") {
+          "混合动力"
+        } else {
+          "其他"
+        }
+      } catch {
+        case e: Exception => "其他"
+      }
+    })
+
     val tempResult = sparkSession.sql("SELECT rowkey, carnum, carEnergy(carnum) car_energy, stopTimeLevel(stopTime) stopTimeLevel, intimeLevel(intime) intimeLevel, timeDay(outtime) outtime, entermodetext, exitmodetext, carporttypetext, consumemoney, payedmoney, courtid FROM car_parking")
     tempResult.createOrReplaceTempView("car_parking")
     tempResult.show()
