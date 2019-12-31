@@ -77,7 +77,7 @@ object HiveExecutor extends Serializable {
         "AND outtime!='' " +
         "AND courtid!='' " +
         "AND carnum!='' " +
-        "AND payedmoney!=''"
+        "AND payedmoney!='' limit 100"
     } else {
       //增量更新，只拉取昨日数据
       sql = "SELECT rowkey, carnum, stopTime, intime, outtime, courtid, entermodetext, exitmodetext, carporttypetext, consumemoney, payedmoney " +
@@ -91,7 +91,7 @@ object HiveExecutor extends Serializable {
         "AND courtid!='' " +
         "AND payedmoney!='' " +
         "AND carnum!='' " +
-        "AND outtime BETWEEN from_unixtime(unix_timestamp()-1*60*60*24, 'yyyy-MM-dd') AND from_unixtime(unix_timestamp(), 'yyyy-MM-dd')"
+        "AND outtime BETWEEN from_unixtime(unix_timestamp()-1*60*60*24, 'yyyy-MM-dd') AND from_unixtime(unix_timestamp(), 'yyyy-MM-dd') limit 100"
     }
 
     val df = sparkSession.sql(sql)
@@ -169,19 +169,23 @@ object HiveExecutor extends Serializable {
 
     sparkSession.udf.register("carSubEnergy", (str: String) => {
       try {
-        if(str.substring(2,3) == "D") {
-          "纯电动"
-        } else if (str.substring(2,3) == "F") {
-          "混合动力"
+        if (str.length > 7) {
+          if(str.substring(2,3) == "D") {
+            "纯电动"
+          } else if (str.substring(2,3) == "F") {
+            "混合动力"
+          } else {
+            "其他"
+          }
         } else {
-          "其他"
+          "非新能源"
         }
       } catch {
         case e: Exception => "其他"
       }
     })
 
-    val tempResult = sparkSession.sql("SELECT rowkey, carnum, carEnergy(carnum) car_energy, stopTimeLevel(stopTime) stopTimeLevel, intimeLevel(intime) intimeLevel, timeDay(outtime) outtime, entermodetext, exitmodetext, carporttypetext, consumemoney, payedmoney, courtid FROM car_parking")
+    val tempResult = sparkSession.sql("SELECT rowkey, carnum, carEnergy(carnum) car_energy, carSubEnergy(carnum) car_sub_energy, stopTimeLevel(stopTime) stopTimeLevel, intimeLevel(intime) intimeLevel, timeDay(outtime) outtime, entermodetext, exitmodetext, carporttypetext, consumemoney, payedmoney, courtid FROM car_parking")
     tempResult.createOrReplaceTempView("car_parking")
     tempResult.show()
 
@@ -206,7 +210,7 @@ object HiveExecutor extends Serializable {
     writeToMysql("cbox_smartvillage", "car_parking_pay_result", resultDf, mode)
 
     //新能源车通行
-    resultDf = sparkSession.sql("SELECT outtime, courtid, carnum, car_energy, COUNT(DISTINCT rowkey) as countNum FROM car_parking GROUP BY car_energy, outtime, courtid, carnum")
+    resultDf = sparkSession.sql("SELECT outtime, courtid, carnum, car_energy, car_sub_energy, COUNT(DISTINCT rowkey) as countNum FROM car_parking GROUP BY car_energy, outtime, courtid, carnum, car_sub_energy")
     writeToMysql("cbox_smartvillage", "car_parking_energy_result", resultDf, mode)
   }
 
