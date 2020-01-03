@@ -125,9 +125,9 @@ object HiveExecutor extends Serializable {
       try {
         val hour: Int = str.split(" ")(1).split(":")(0).toInt
         if (hour >= 0 && hour < 8) {
-          "0-8点"
+          "0-08点"
         } else if (hour >= 8 && hour < 10) {
-          "8-10点"
+          "08-10点"
         } else if (hour >= 10 && hour < 12) {
           "10-12点"
         } else if (hour >= 12 && hour < 14) {
@@ -137,7 +137,7 @@ object HiveExecutor extends Serializable {
         } else if (hour >= 18 && hour < 22) {
           "18-22点"
         } else if (hour >= 22 && hour < 24) {
-          "22-34点"
+          "22-24点"
         } else {
           "其他"
         }
@@ -366,7 +366,7 @@ object HiveExecutor extends Serializable {
       try {
         val hour: Int = str.split(" ")(1).split(":")(0).toInt
         if (hour >= 0 && hour < 8) {
-          "0-8点"
+          "0-08点"
         } else if (hour >= 8 && hour < 10) {
           "8-10点"
         } else if (hour >= 10 && hour < 12) {
@@ -378,7 +378,7 @@ object HiveExecutor extends Serializable {
         } else if (hour >= 18 && hour < 22) {
           "18-22点"
         } else if (hour >= 22 && hour < 24) {
-          "22-34点"
+          "22-24点"
         } else {
           "其他"
         }
