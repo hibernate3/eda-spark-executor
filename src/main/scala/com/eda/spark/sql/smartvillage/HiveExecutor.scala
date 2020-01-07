@@ -77,7 +77,7 @@ object HiveExecutor extends Serializable {
         "AND outtime!='' " +
         "AND courtid!='' " +
         "AND carnum!='' " +
-        "AND payedmoney!='' limit 100"
+        "AND payedmoney!=''"
     } else {
       //增量更新，只拉取昨日数据
       sql = "SELECT rowkey, carnum, stopTime, intime, outtime, courtid, entermodetext, exitmodetext, carporttypetext, consumemoney, payedmoney " +
@@ -91,7 +91,7 @@ object HiveExecutor extends Serializable {
         "AND courtid!='' " +
         "AND payedmoney!='' " +
         "AND carnum!='' " +
-        "AND outtime BETWEEN from_unixtime(unix_timestamp()-1*60*60*24, 'yyyy-MM-dd') AND from_unixtime(unix_timestamp(), 'yyyy-MM-dd') limit 100"
+        "AND outtime BETWEEN from_unixtime(unix_timestamp()-1*60*60*24, 'yyyy-MM-dd') AND from_unixtime(unix_timestamp(), 'yyyy-MM-dd')"
     }
 
     val df = sparkSession.sql(sql)
