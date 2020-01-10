@@ -22,7 +22,7 @@ object HiveExecutor extends Serializable {
 
     executeICCard(sqlContext, syncMode)
     executeCarParking(sqlContext, syncMode)
-    executeDeviceAuth(sqlContext, syncMode)
+//    executeDeviceAuth(sqlContext, syncMode)
     executeDeviceAccess(sqlContext, syncMode)
     executePayment(sqlContext, syncMode)
     executeBaseCourt(sqlContext, syncMode)
@@ -294,15 +294,13 @@ object HiveExecutor extends Serializable {
     tempResult.createOrReplaceTempView("device_auth")
     tempResult.show()
 
-    
-
     //人员类型比例
     var resultDf = sparkSession.sql("SELECT usertype, courtuuid, credencetype, COUNT(DISTINCT rowkey) as countNum FROM device_auth GROUP BY usertype, credencetype, courtuuid")
     writeToMysql("cbox_smartvillage", "device_auth_usertype_result", resultDf, mode)
 
     //设备类型比例
-//    resultDf = sparkSession.sql("SELECT devicename, courtuuid, COUNT(DISTINCT rowkey) as countNum FROM device_auth GROUP BY devicename, courtuuid")
-//    writeToMysql("cbox_smartvillage", "device_auth_devicetype_result", resultDf, mode)
+    resultDf = sparkSession.sql("SELECT devicename, courtuuid, COUNT(DISTINCT rowkey) as countNum FROM device_auth GROUP BY devicename, courtuuid")
+    writeToMysql("cbox_smartvillage", "device_auth_devicetype_result", resultDf, mode)
 
     //凭证类型比例
     resultDf = sparkSession.sql("SELECT credencetype, courtuuid, COUNT(DISTINCT rowkey) as countNum FROM device_auth GROUP BY credencetype, courtuuid")
