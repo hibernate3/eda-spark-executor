@@ -222,19 +222,17 @@ object HiveExecutor extends Serializable {
       sql = "SELECT rowkey, usertype, devicename, subdevicename, credencetype, courtuuid, updatetime " +
         "FROM community.community_deviceauthdetail " +
         "WHERE usertype!='' " +
-        "AND devicename!='' " +
-        "AND subdevicename!='' " +
+        "AND devicename like '[%' " +
         "AND courtuuid!='' " +
-        "AND credencetype!=''"
+        "AND credencetype like '[%' "
     } else {
       //增量更新，只拉取昨日数据
       sql = "SELECT rowkey, usertype, devicename, subdevicename, credencetype, courtuuid, updatetime " +
         "FROM community.community_deviceauthdetail " +
         "WHERE usertype!='' " +
-        "AND devicename!='' " +
-        "AND subdevicename!='' " +
+        "AND devicename like '[%' " +
         "AND courtuuid!='' " +
-        "AND credencetype!='' " +
+        "AND credencetype like '[%' " +
         "AND updatetime BETWEEN from_unixtime(unix_timestamp()-1*60*60*24, 'yyyy-MM-dd') AND from_unixtime(unix_timestamp(), 'yyyy-MM-dd')"
     }
 
@@ -291,17 +289,19 @@ object HiveExecutor extends Serializable {
       }
     })
 
-    val tempResult = sparkSession.sql("SELECT rowkey, courtuuid, userTypeConverter(usertype) usertype, devicename, subdevicename, credenceTypeConverter(credencetype) credencetype FROM device_auth")
+    val tempResult = sparkSession.sql("SELECT rowkey, courtuuid, userTypeConverter(usertype) usertype, devicename, subdevicename, credencetype FROM device_auth")
     tempResult.createOrReplaceTempView("device_auth")
     tempResult.show()
+
+    
 
     //人员类型比例
     var resultDf = sparkSession.sql("SELECT usertype, courtuuid, credencetype, COUNT(DISTINCT rowkey) as countNum FROM device_auth GROUP BY usertype, credencetype, courtuuid")
     writeToMysql("cbox_smartvillage_v0.1", "device_auth_usertype_result", resultDf, mode)
 
     //设备类型比例
-    resultDf = sparkSession.sql("SELECT devicename, courtuuid, COUNT(DISTINCT rowkey) as countNum FROM device_auth GROUP BY devicename, courtuuid")
-    writeToMysql("cbox_smartvillage_v0.1", "device_auth_devicetype_result", resultDf, mode)
+//    resultDf = sparkSession.sql("SELECT devicename, courtuuid, COUNT(DISTINCT rowkey) as countNum FROM device_auth GROUP BY devicename, courtuuid")
+//    writeToMysql("cbox_smartvillage", "device_auth_devicetype_result", resultDf, mode)
 
     //凭证类型比例
     resultDf = sparkSession.sql("SELECT credencetype, courtuuid, COUNT(DISTINCT rowkey) as countNum FROM device_auth GROUP BY credencetype, courtuuid")
