@@ -512,12 +512,35 @@ object HiveExecutor extends Serializable {
 
     sparkSession.udf.register("province_check", (str: String) => {
       try {
-        if (str == "深圳") {
+        if (str.trim.length == 0) {
+          "其他"
+        } else if (str == "深圳") {
           "广东省"
         } else if (!str.endsWith("区") && !str.endsWith("省") && !str.endsWith("市")
           && !str.contains("北京") && !str.contains("上海")
-          && !str.contains("重庆") && !str.contains("天津")){
+          && !str.contains("重庆") && !str.contains("天津")
+          && !str.contains("内蒙古") && !str.contains("宁夏")
+          && !str.contains("广西") && !str.contains("西藏")
+          && !str.contains("新疆")){
           str + "省"
+        } else if (str.contains("北京")) {
+          "北京市"
+        } else if (str.contains("上海")) {
+          "上海市"
+        } else if (str.contains("天津")) {
+          "天津市"
+        } else if (str.contains("重庆")) {
+          "重庆市"
+        } else if (str.contains("内蒙古")) {
+          "内蒙古自治区"
+        } else if (str.contains("新疆")) {
+          "新疆维吾尔自治区"
+        } else if (str.contains("广西")) {
+          "广西壮族自治区"
+        } else if (str.contains("宁夏")) {
+          "宁夏回族自治区"
+        } else if (str.contains("西藏")) {
+          "西藏自治区"
         } else {
           str
         }
@@ -526,16 +549,8 @@ object HiveExecutor extends Serializable {
       }
     })
 
-    sparkSession.udf.register("timeDay", (str: String) => {
-      try {
-        str.split(" ")(0)
-      } catch {
-        case e: Exception => "其他"
-      }
-    })
-
     val resultDf = sparkSession.sql("SELECT uuid, name, province_check(province) province, city, district, update_time from base_court")
-    writeToMysql("cbox_smartvillage_v0.1", "base_court", df, mode)
+    writeToMysql("cbox_smartvillage_v0.1", "base_court", resultDf, mode)
   }
 
   def writeToMysql(db: String, table: String, data: DataFrame, mode: Int): Unit = {
