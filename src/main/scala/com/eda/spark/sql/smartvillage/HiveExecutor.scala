@@ -21,7 +21,7 @@ object HiveExecutor extends Serializable {
 
     executeICCard(sqlContext, syncMode)
     executeCarParking(sqlContext, syncMode)
-    executeDeviceAuth(sqlContext, syncMode)
+//    executeDeviceAuth(sqlContext, syncMode)
     executeDeviceAccess(sqlContext, syncMode)
     executePayment(sqlContext, syncMode)
     executeBaseCourt(sqlContext, syncMode)
@@ -37,7 +37,7 @@ object HiveExecutor extends Serializable {
         "AND owneruuid !='' " +
         "AND ownertypetext !='' " +
         "AND courtid !='' " +
-        "AND cardstatustext !=''"
+        "AND cardstatustext !='' limit 100"
     } else {
       //增量更新，只拉取昨日数据
       sql = "SELECT rowkey, cardtype, owneruuid, ownertypetext, courtid, cardstatustext, updatetime " +
@@ -47,7 +47,7 @@ object HiveExecutor extends Serializable {
         "AND ownertypetext !='' " +
         "AND courtid !='' " +
         "AND cardstatustext !='' " +
-        "AND updatetime BETWEEN from_unixtime(unix_timestamp()-1*60*60*24, 'yyyy-MM-dd') AND from_unixtime(unix_timestamp(), 'yyyy-MM-dd')"
+        "AND updatetime BETWEEN from_unixtime(unix_timestamp()-1*60*60*24, 'yyyy-MM-dd') AND from_unixtime(unix_timestamp(), 'yyyy-MM-dd') limit 100"
     }
 
     val df = sparkSession.sql(sql)
@@ -224,7 +224,7 @@ object HiveExecutor extends Serializable {
         "WHERE usertype!='' " +
         "AND devicename like '[%' " +
         "AND courtuuid!='' " +
-        "AND credencetype like '[%' "
+        "AND credencetype like '[%'  limit 100"
     } else {
       //增量更新，只拉取昨日数据
       sql = "SELECT rowkey, usertype, devicename, subdevicename, credencetype, courtuuid, updatetime " +
@@ -233,7 +233,7 @@ object HiveExecutor extends Serializable {
         "AND devicename like '[%' " +
         "AND courtuuid!='' " +
         "AND credencetype like '[%' " +
-        "AND updatetime BETWEEN from_unixtime(unix_timestamp()-1*60*60*24, 'yyyy-MM-dd') AND from_unixtime(unix_timestamp(), 'yyyy-MM-dd')"
+        "AND updatetime BETWEEN from_unixtime(unix_timestamp()-1*60*60*24, 'yyyy-MM-dd') AND from_unixtime(unix_timestamp(), 'yyyy-MM-dd') limit 100"
     }
 
     val df = sparkSession.sql(sql)
@@ -321,7 +321,7 @@ object HiveExecutor extends Serializable {
         "AND devicename!='' " +
         "AND updatetime!='' " +
         "AND courtuuid!='' " +
-        "AND description!=''"
+        "AND description!='' limit 100"
     } else {
       //增量更新，只拉取昨日数据
       sql = "SELECT rowkey, courtuuid, userid, usertype, devicename, updatetime, description " +
@@ -332,7 +332,7 @@ object HiveExecutor extends Serializable {
         "AND updatetime!='' " +
         "AND courtuuid!='' " +
         "AND description!='' " +
-        "AND updatetime BETWEEN from_unixtime(unix_timestamp()-1*60*60*24, 'yyyy-MM-dd') AND from_unixtime(unix_timestamp(), 'yyyy-MM-dd')"
+        "AND updatetime BETWEEN from_unixtime(unix_timestamp()-1*60*60*24, 'yyyy-MM-dd') AND from_unixtime(unix_timestamp(), 'yyyy-MM-dd') limit 100"
     }
 
     val df = sparkSession.sql(sql)
@@ -450,14 +450,14 @@ object HiveExecutor extends Serializable {
       sql = "SELECT left(cast(r.pay_time as VARCHAR), 10) as pay_date, o.payment_type, o.court_uuid, count(*) as total_times " +
         "FROM fm.fm_payment_record as r " +
         "INNER JOIN fm.fm_payment_order as o on o.out_trade_no = r.out_trade_no " +
-        "GROUP BY pay_date, o.payment_type, o.court_uuid"
+        "GROUP BY pay_date, o.payment_type, o.court_uuid limit 100"
     } else {
       //增量更新，只拉取昨日数据
       sql = "SELECT left(cast(r.pay_time as VARCHAR), 10) as pay_date, o.payment_type, o.court_uuid, count(*) as total_times " +
         "FROM fm.fm_payment_record as r " +
         "INNER JOIN fm.fm_payment_order as o on o.out_trade_no = r.out_trade_no " +
         "where left(cast(r.pay_time as VARCHAR), 10) = '" + yesterday + "' " +
-        "GROUP BY pay_date, o.payment_type, o.court_uuid"
+        "GROUP BY pay_date, o.payment_type, o.court_uuid limit 100"
     }
 
     var df = readFromPgsql(sparkSession, "hdsc_db", sql)
@@ -471,13 +471,13 @@ object HiveExecutor extends Serializable {
       sql = "SELECT left(cast(r.pay_time as VARCHAR), 10) as pay_date, o.payment_type, o.court_uuid, cast(SUM(cast(total_amount as FLOAT8)) AS decimal(10,2)) as total_money " +
         "FROM fm.fm_payment_record as r " +
         "INNER JOIN fm.fm_payment_order as o on o.out_trade_no = r.out_trade_no " +
-        "GROUP BY pay_date, o.payment_type, o.court_uuid"
+        "GROUP BY pay_date, o.payment_type, o.court_uuid limit 100"
     } else {
       sql = "SELECT left(cast(r.pay_time as VARCHAR), 10) as pay_date, o.payment_type, o.court_uuid, cast(SUM(cast(total_amount as FLOAT8)) AS decimal(10,2)) as total_money " +
         "FROM fm.fm_payment_record as r " +
         "INNER JOIN fm.fm_payment_order as o on o.out_trade_no = r.out_trade_no " +
         "where left(cast(r.pay_time as VARCHAR), 10) = '" + yesterday + "' " +
-        "GROUP BY pay_date, o.payment_type, o.court_uuid"
+        "GROUP BY pay_date, o.payment_type, o.court_uuid limit 100"
     }
 
     df = readFromPgsql(sparkSession, "hdsc_db", sql)
@@ -499,15 +499,42 @@ object HiveExecutor extends Serializable {
     if (mode == 0) {
       //全量更新
       sql = "SELECT uuid, name, province, city, district, left(cast(update_time as VARCHAR), 10) as update_time " +
-        "FROM mdc.base_court"
+        "FROM mdc.base_court limit 100"
     } else {
       //增量更新，只拉取昨日数据
       sql = "SELECT uuid, name, province, city, district, left(cast(update_time as VARCHAR), 10) as update_time " +
         "FROM mdc.base_court " +
-        "WHERE left(cast(update_time as VARCHAR), 10) = '" + yesterday + "'"
+        "WHERE left(cast(update_time as VARCHAR), 10) = '" + yesterday + "' limit 100"
     }
 
     val df = readFromPgsql(sparkSession, "hdsc_db", sql)
+    df.cache().createOrReplaceTempView("base_court")
+
+    sparkSession.udf.register("province_check", (str: String) => {
+      try {
+        if (str == "深圳") {
+          "广东省"
+        } else if (!str.endsWith("区") && !str.endsWith("省") && !str.endsWith("市")
+          && !str.contains("北京") && !str.contains("上海")
+          && !str.contains("重庆") && !str.contains("天津")){
+          str + "省"
+        } else {
+          str
+        }
+      } catch {
+        case e: Exception => "其他"
+      }
+    })
+
+    sparkSession.udf.register("timeDay", (str: String) => {
+      try {
+        str.split(" ")(0)
+      } catch {
+        case e: Exception => "其他"
+      }
+    })
+
+    val resultDf = sparkSession.sql("SELECT uuid, name, province_check(province) province, city, district, update_time from base_court")
     writeToMysql("cbox_smartvillage_v0.1", "base_court", df, mode)
   }
 
