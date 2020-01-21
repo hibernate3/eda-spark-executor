@@ -5,6 +5,9 @@ import java.text.SimpleDateFormat
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import org.apache.spark.sql.types.DataTypes
 import java.util.{Calendar, Date, Properties}
+import com.eda.spark.utils.DBUtil
+
+import com.eda.java.utils.HBaseUtil
 
 object HiveExecutor extends Serializable {
   def main(args: Array[String]): Unit = {
@@ -55,11 +58,13 @@ object HiveExecutor extends Serializable {
 
     //IC持卡人分布
     var resultDf = sparkSession.sql("SELECT cardtype, ownertypetext, courtid, COUNT(DISTINCT rowkey) as countNum FROM ic_card GROUP BY cardtype, ownertypetext, courtid")
-    writeToMysql("cbox_smartvillage_v0.1", "ic_card_user_result", resultDf, mode)
+
+    val dbUtil = new DBUtil()
+    dbUtil.writeToMysql("10.101.71.42", 3306, "cbox_smartvillage_v0.1", "root", "hd123456", "ic_card_user_result", resultDf, mode)
 
     //IC状态分布
     resultDf = sparkSession.sql("SELECT cardtype, cardstatustext, courtid, COUNT(DISTINCT rowkey) as countNum FROM ic_card GROUP BY cardtype, cardstatustext, courtid")
-    writeToMysql("cbox_smartvillage_v0.1", "ic_card_status_result", resultDf, mode)
+    dbUtil.writeToMysql("10.101.71.42", 3306, "cbox_smartvillage_v0.1", "root", "hd123456", "ic_card_status_result", resultDf, mode)
   }
 
   def executeCarParking(sparkSession: SparkSession, mode: Int): Unit = {
@@ -190,27 +195,29 @@ object HiveExecutor extends Serializable {
 
     //机动车停车时长分布
     var resultDf = sparkSession.sql("SELECT stopTimeLevel, courtid, COUNT(DISTINCT rowkey) as countNum FROM car_parking GROUP BY stopTimeLevel, courtid")
-    writeToMysql("cbox_smartvillage_v0.1", "car_parking_stoptime_result", resultDf, mode)
+
+    val dbUtil = new DBUtil()
+    dbUtil.writeToMysql("10.101.71.42", 3306, "cbox_smartvillage_v0.1", "root", "hd123456", "car_parking_stoptime_result", resultDf, mode)
 
     //机动车入场时间分布
     resultDf = sparkSession.sql("SELECT intimeLevel, courtid, COUNT(DISTINCT rowkey) as countNum FROM car_parking GROUP BY intimeLevel, courtid")
-    writeToMysql("cbox_smartvillage_v0.1", "car_parking_intime_result", resultDf, mode)
+    dbUtil.writeToMysql("10.101.71.42", 3306, "cbox_smartvillage_v0.1", "root", "hd123456", "car_parking_intime_result", resultDf, mode)
 
     //机动车出场开闸方式
     resultDf = sparkSession.sql("SELECT exitmodetext, courtid, COUNT(DISTINCT rowkey) as countNum FROM car_parking GROUP BY exitmodetext, courtid")
-    writeToMysql("cbox_smartvillage_v0.1", "car_parking_exitmode_result", resultDf, mode)
+    dbUtil.writeToMysql("10.101.71.42", 3306, "cbox_smartvillage_v0.1", "root", "hd123456", "car_parking_exitmode_result", resultDf, mode)
 
     //车辆类型比例
     resultDf = sparkSession.sql("SELECT carporttypetext, courtid, COUNT(DISTINCT rowkey) as countNum FROM car_parking GROUP BY carporttypetext, courtid")
-    writeToMysql("cbox_smartvillage_v0.1", "car_parking_parkingtype_result", resultDf, mode)
+    dbUtil.writeToMysql("10.101.71.42", 3306, "cbox_smartvillage_v0.1", "root", "hd123456", "car_parking_parkingtype_result", resultDf, mode)
 
     //车辆缴费
     resultDf = sparkSession.sql("SELECT outtime, courtid, SUM(payedmoney) as payedmoney_total, SUM(consumemoney) as consumemoney_total FROM car_parking GROUP BY outtime, courtid")
-    writeToMysql("cbox_smartvillage_v0.1", "car_parking_pay_result", resultDf, mode)
+    dbUtil.writeToMysql("10.101.71.42", 3306, "cbox_smartvillage_v0.1", "root", "hd123456", "car_parking_pay_result", resultDf, mode)
 
     //新能源车通行
     resultDf = sparkSession.sql("SELECT outtime, courtid, carnum, car_energy, car_sub_energy, COUNT(DISTINCT rowkey) as countNum FROM car_parking GROUP BY car_energy, outtime, courtid, carnum, car_sub_energy")
-    writeToMysql("cbox_smartvillage_v0.1", "car_parking_energy_result", resultDf, mode)
+    dbUtil.writeToMysql("10.101.71.42", 3306, "cbox_smartvillage_v0.1", "root", "hd123456", "car_parking_energy_result", resultDf, mode)
   }
 
 
@@ -297,15 +304,17 @@ object HiveExecutor extends Serializable {
 
     //人员类型比例
     var resultDf = sparkSession.sql("SELECT usertype, courtuuid, credencetype, COUNT(DISTINCT rowkey) as countNum FROM device_auth GROUP BY usertype, credencetype, courtuuid")
-    writeToMysql("cbox_smartvillage_v0.1", "device_auth_usertype_result", resultDf, mode)
+    val dbUtil = new DBUtil()
+    dbUtil.writeToMysql("10.101.71.42", 3306, "cbox_smartvillage_v0.1", "root", "hd123456", "device_auth_usertype_result", resultDf, mode)
 
     //设备类型比例
 //    resultDf = sparkSession.sql("SELECT devicename, courtuuid, COUNT(DISTINCT rowkey) as countNum FROM device_auth GROUP BY devicename, courtuuid")
-//    writeToMysql("cbox_smartvillage", "device_auth_devicetype_result", resultDf, mode)
+//    dbUtil.writeToMysql("10.101.71.42", 3306, "cbox_smartvillage_v0.1", "root", "hd123456", "device_auth_devicetype_result", resultDf, mode)
+
 
     //凭证类型比例
     resultDf = sparkSession.sql("SELECT credencetype, courtuuid, COUNT(DISTINCT rowkey) as countNum FROM device_auth GROUP BY credencetype, courtuuid")
-    writeToMysql("cbox_smartvillage_v0.1", "device_auth_credencetype_result", resultDf, mode)
+    dbUtil.writeToMysql("10.101.71.42", 3306, "cbox_smartvillage_v0.1", "root", "hd123456", "device_auth_credencetype_result", resultDf, mode)
   }
 
 
@@ -402,19 +411,20 @@ object HiveExecutor extends Serializable {
 
     //人员类型趋势
     var resultDf = sparkSession.sql("SELECT usertype, updatetimeDay, courtuuid, COUNT(DISTINCT rowkey) as countNum FROM device_access GROUP BY usertype, updatetimeDay, courtuuid")
-    writeToMysql("cbox_smartvillage_v0.1", "device_access_usertype_result", resultDf, mode)
+    val dbUtil = new DBUtil()
+    dbUtil.writeToMysql("10.101.71.42", 3306, "cbox_smartvillage_v0.1", "root", "hd123456", "device_access_usertype_result", resultDf, mode)
 
     //设备类型趋势
     resultDf = sparkSession.sql("SELECT devicename, updatetimeDay, courtuuid, COUNT(DISTINCT rowkey) as countNum FROM device_access GROUP BY devicename, updatetimeDay, courtuuid")
-    writeToMysql("cbox_smartvillage_v0.1", "device_access_devicetype_result", resultDf, mode)
+    dbUtil.writeToMysql("10.101.71.42", 3306, "cbox_smartvillage_v0.1", "root", "hd123456", "device_access_devicetype_result", resultDf, mode)
 
     //凭证类型趋势
     resultDf = sparkSession.sql("SELECT description, updatetimeDay, courtuuid, COUNT(DISTINCT rowkey) as countNum FROM device_access GROUP BY description, updatetimeDay, courtuuid")
-    writeToMysql("cbox_smartvillage_v0.1", "device_access_description_result", resultDf, mode)
+    dbUtil.writeToMysql("10.101.71.42", 3306, "cbox_smartvillage_v0.1", "root", "hd123456", "device_access_description_result", resultDf, mode)
 
     //设备通行时间分布
     resultDf = sparkSession.sql("SELECT devicename, updatetimeDay, courtuuid, COUNT(DISTINCT rowkey) as countNum FROM device_access GROUP BY devicename, updatetimeDay, courtuuid")
-    writeToMysql("cbox_smartvillage_v0.1", "device_access_updatetime_result", resultDf, mode)
+    dbUtil.writeToMysql("10.101.71.42", 3306, "cbox_smartvillage_v0.1", "root", "hd123456", "device_access_updatetime_result", resultDf, mode)
   }
 
 
@@ -460,12 +470,13 @@ object HiveExecutor extends Serializable {
         "GROUP BY pay_date, o.payment_type, o.court_uuid limit 100"
     }
 
-    var df = readFromPgsql(sparkSession, "hdsc_db", sql)
+    val dbUtil = new DBUtil()
+    var df = dbUtil.readFromPgsql(sparkSession, "10.101.70.169", 5432, "hdsc_db", "hdsc_postgres", "hdsc_postgres", sql)
     df.cache().createOrReplaceTempView("payment_times")
 
     //业主App缴费笔数
     var resultDf = sparkSession.sql("SELECT pay_date, court_uuid, payment_type_name(payment_type) as payment_type, total_times from payment_times")
-    writeToMysql("cbox_smartvillage_v0.1", "payment_times_result", resultDf, mode)
+    dbUtil.writeToMysql("10.101.71.42", 3306, "cbox_smartvillage_v0.1", "root", "hd123456", "payment_times_result", resultDf, mode)
 
     if (mode == 0) {
       sql = "SELECT left(cast(r.pay_time as VARCHAR), 10) as pay_date, o.payment_type, o.court_uuid, cast(SUM(cast(total_amount as FLOAT8)) AS decimal(10,2)) as total_money " +
@@ -480,12 +491,12 @@ object HiveExecutor extends Serializable {
         "GROUP BY pay_date, o.payment_type, o.court_uuid limit 100"
     }
 
-    df = readFromPgsql(sparkSession, "hdsc_db", sql)
+    df = dbUtil.readFromPgsql(sparkSession, "10.101.70.169", 5432, "hdsc_db", "hdsc_postgres", "hdsc_postgres", sql)
     df.cache().createOrReplaceTempView("payment_money")
 
     //业主App缴费金额
     resultDf = sparkSession.sql("SELECT pay_date, court_uuid, payment_type_name(payment_type) as payment_type, total_money from payment_money")
-    writeToMysql("cbox_smartvillage_v0.1", "payment_money_result", resultDf, mode)
+    dbUtil.writeToMysql("10.101.71.42", 3306, "cbox_smartvillage_v0.1", "root", "hd123456", "payment_money_result", resultDf, mode)
   }
 
   def executeBaseCourt(sparkSession: SparkSession, mode: Int): Unit = {
@@ -507,7 +518,8 @@ object HiveExecutor extends Serializable {
         "WHERE left(cast(update_time as VARCHAR), 10) = '" + yesterday + "' limit 100"
     }
 
-    val df = readFromPgsql(sparkSession, "hdsc_db", sql)
+    val dbUtil = new DBUtil()
+    var df = dbUtil.readFromPgsql(sparkSession, "10.101.70.169", 5432, "hdsc_db", "hdsc_postgres", "hdsc_postgres", sql)
     df.cache().createOrReplaceTempView("base_court")
 
     sparkSession.udf.register("province_check", (str: String) => {
@@ -550,44 +562,6 @@ object HiveExecutor extends Serializable {
     })
 
     val resultDf = sparkSession.sql("SELECT uuid, name, province_check(province) province, city, district, update_time from base_court")
-    writeToMysql("cbox_smartvillage_v0.1", "base_court", resultDf, mode)
-  }
-
-  def writeToMysql(db: String, table: String, data: DataFrame, mode: Int): Unit = {
-    val url = "jdbc:mysql://10.101.71.42:3306/" + db + "?useUnicode=true&characterEncoding=utf-8&useSSL=false"
-    val prop = new Properties()
-    prop.put("user", "root")
-    prop.put("driver", "com.mysql.jdbc.Driver")
-    prop.put("password", "hd123456")
-
-    if (mode == 0) {
-      //全量更新
-      data.write.mode(SaveMode.Overwrite).jdbc(url, table, prop)
-    } else {
-      //增量更新
-      data.write.mode(SaveMode.Append).jdbc(url, table, prop)
-    }
-  }
-
-  def readFromMysql(sparkSession: SparkSession, db: String, sqlText: String): DataFrame = {
-    val url = "jdbc:mysql://10.101.71.42:3306/" + db + "?useUnicode=true&characterEncoding=utf-8&useSSL=false"
-    val prop = new Properties()
-    prop.put("user", "root")
-    prop.put("password", "hd123456")
-    prop.put("driver", "com.mysql.jdbc.Driver")
-
-    val df = sparkSession.read.jdbc(url, s"(${sqlText}) t", prop)
-    return df
-  }
-
-  def readFromPgsql(sparkSession: SparkSession, db: String, sqlText: String): DataFrame = {
-    val url = "jdbc:postgresql://10.101.70.169:5432/" + db
-    val prop = new Properties()
-    prop.put("user", "hdsc_postgres")
-    prop.put("password", "hdsc_postgres")
-    prop.put("driver", "org.postgresql.Driver")
-
-    var df = sparkSession.read.jdbc(url, s"(${sqlText}) t", prop)
-    return df
+    dbUtil.writeToMysql("10.101.71.42", 3306, "cbox_smartvillage_v0.1", "root", "hd123456", "base_court", resultDf, mode)
   }
 }
