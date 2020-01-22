@@ -7,12 +7,10 @@ import org.apache.spark.sql.types.DataTypes
 import java.util.{Calendar, Date, Properties}
 import com.eda.spark.utils.DBUtil
 
-import com.eda.java.utils.HBaseUtil
-
 object HiveExecutor extends Serializable {
   def main(args: Array[String]): Unit = {
-//    val sqlContext = SparkSession.builder().master("local[2]").appName(this.getClass.getSimpleName).enableHiveSupport().getOrCreate()
-    val sqlContext = SparkSession.builder().appName(this.getClass.getSimpleName).enableHiveSupport().getOrCreate()
+    val sqlContext = SparkSession.builder().master("local[2]").appName(this.getClass.getSimpleName).enableHiveSupport().getOrCreate()
+//    val sqlContext = SparkSession.builder().appName(this.getClass.getSimpleName).enableHiveSupport().getOrCreate()
     sqlContext.sparkContext.setLogLevel("WARN")
 
     val today = new SimpleDateFormat("yyyy-MM-dd").format(new Date)
