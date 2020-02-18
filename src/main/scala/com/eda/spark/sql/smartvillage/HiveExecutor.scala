@@ -10,22 +10,25 @@ import com.eda.spark.utils.DBUtil
 object HiveExecutor extends Serializable {
   def main(args: Array[String]): Unit = {
     val sqlContext = SparkSession.builder().master("local[2]").appName(this.getClass.getSimpleName).enableHiveSupport().getOrCreate()
-//    val sqlContext = SparkSession.builder().appName(this.getClass.getSimpleName).enableHiveSupport().getOrCreate()
+    //    val sqlContext = SparkSession.builder().appName(this.getClass.getSimpleName).enableHiveSupport().getOrCreate()
     sqlContext.sparkContext.setLogLevel("WARN")
 
     val today = new SimpleDateFormat("yyyy-MM-dd").format(new Date)
     var syncMode = 0
 
-    if (today > "2020-01-25") { //上线发布日期
+    if (today > "2020-02-25") { //上线发布日期
       syncMode = 1 //增量更新
     }
-
+    /*
     executeICCard(sqlContext, syncMode)
     executeCarParking(sqlContext, syncMode)
 //    executeDeviceAuth(sqlContext, syncMode)
     executeDeviceAccess(sqlContext, syncMode)
     executePayment(sqlContext, syncMode)
     executeBaseCourt(sqlContext, syncMode)
+    */
+
+    executeErpOrg(sqlContext, syncMode)
   }
 
   def executeICCard(sparkSession: SparkSession, mode: Int): Unit = {
@@ -159,7 +162,7 @@ object HiveExecutor extends Serializable {
 
     sparkSession.udf.register("carEnergy", (str: String) => {
       try {
-        if(str.length > 7) {
+        if (str.length > 7) {
           "新能源"
         } else {
           "非新能源"
@@ -172,9 +175,9 @@ object HiveExecutor extends Serializable {
     sparkSession.udf.register("carSubEnergy", (str: String) => {
       try {
         if (str.length > 7) {
-          if(str.substring(2,3) == "D") {
+          if (str.substring(2, 3) == "D") {
             "纯电动"
-          } else if (str.substring(2,3) == "F") {
+          } else if (str.substring(2, 3) == "F") {
             "混合动力"
           } else {
             "其他"
@@ -298,7 +301,6 @@ object HiveExecutor extends Serializable {
     tempResult.createOrReplaceTempView("device_auth")
     tempResult.show()
 
-    
 
     //人员类型比例
     var resultDf = sparkSession.sql("SELECT usertype, courtuuid, credencetype, COUNT(DISTINCT rowkey) as countNum FROM device_auth GROUP BY usertype, credencetype, courtuuid")
@@ -306,8 +308,8 @@ object HiveExecutor extends Serializable {
     dbUtil.writeToMysql("10.101.71.42", 3306, "cbox_smartvillage_v0.1", "root", "hd123456", "device_auth_usertype_result", resultDf, mode)
 
     //设备类型比例
-//    resultDf = sparkSession.sql("SELECT devicename, courtuuid, COUNT(DISTINCT rowkey) as countNum FROM device_auth GROUP BY devicename, courtuuid")
-//    dbUtil.writeToMysql("10.101.71.42", 3306, "cbox_smartvillage_v0.1", "root", "hd123456", "device_auth_devicetype_result", resultDf, mode)
+    //    resultDf = sparkSession.sql("SELECT devicename, courtuuid, COUNT(DISTINCT rowkey) as countNum FROM device_auth GROUP BY devicename, courtuuid")
+    //    dbUtil.writeToMysql("10.101.71.42", 3306, "cbox_smartvillage_v0.1", "root", "hd123456", "device_auth_devicetype_result", resultDf, mode)
 
 
     //凭证类型比例
@@ -531,7 +533,7 @@ object HiveExecutor extends Serializable {
           && !str.contains("重庆") && !str.contains("天津")
           && !str.contains("内蒙古") && !str.contains("宁夏")
           && !str.contains("广西") && !str.contains("西藏")
-          && !str.contains("新疆")){
+          && !str.contains("新疆")) {
           str + "省"
         } else if (str.contains("北京")) {
           "北京市"
@@ -561,5 +563,48 @@ object HiveExecutor extends Serializable {
 
     val resultDf = sparkSession.sql("SELECT uuid, name, province_check(province) province, city, district, update_time from base_court")
     dbUtil.writeToMysql("10.101.71.42", 3306, "cbox_smartvillage_v0.1", "root", "hd123456", "base_court", resultDf, mode)
+  }
+
+  def executeErpOrg(sparkSession: SparkSession, mode: Int): Unit = {
+    var sql: String = ""
+
+    var dateFormat: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd")
+    var cal: Calendar = Calendar.getInstance()
+    cal.add(Calendar.DATE, -1)
+    var yesterday = dateFormat.format(cal.getTime())
+
+    if (mode == 0) {
+      //全量更新
+      sql = "SELECT uuid, name, parent_uuid, description, court_uuid, court_name, org_type, left(cast(update_time as VARCHAR), 10) as update_time " +
+        "FROM mdc.erp_org where delete_flag = 1 limit 100"
+    } else {
+      //增量更新，只拉取昨日数据
+      sql = "SELECT uuid, name, parent_uuid, description, court_uuid, court_name, org_type, left(cast(update_time as VARCHAR), 10) as update_time " +
+        "FROM mdc.erp_org where delete_flag = 1 limit 100 " +
+        "WHERE left(cast(update_time as VARCHAR), 10) = '" + yesterday + "'"
+    }
+
+    sparkSession.udf.register("org_type_trans", (str: String) => {
+      try {
+        if (str == "1") {
+          "集团"
+        } else if (str == "2") {
+          "分公司"
+        } else if (str == "3") {
+          "项目"
+        } else {
+          "其他"
+        }
+      } catch {
+        case e: Exception => "其他"
+      }
+    })
+
+    val dbUtil = new DBUtil()
+    var df = dbUtil.readFromPgsql(sparkSession, "10.101.70.169", 5432, "hdsc_db", "hdsc_postgres", "hdsc_postgres", sql)
+    df.cache().createOrReplaceTempView("erp_org")
+
+    val resultDf = sparkSession.sql("SELECT uuid, name, parent_uuid, description, court_uuid, court_name, org_type_trans(org_type) org_type, update_time from erp_org")
+    dbUtil.writeToMysql("10.101.71.42", 3306, "cbox_smartvillage_v0.1", "root", "hd123456", "erp_org", resultDf, mode)
   }
 }
