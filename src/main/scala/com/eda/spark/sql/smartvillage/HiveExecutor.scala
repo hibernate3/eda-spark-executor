@@ -18,7 +18,7 @@ object HiveExecutor extends Serializable {
     val today = new SimpleDateFormat("yyyy-MM-dd").format(new Date)
     var syncMode = 0
 
-    if (today > "2020-01-25") { //上线发布日期
+    if (today > "2020-02-25") { //上线发布日期
       syncMode = 1
     }
 
@@ -28,6 +28,7 @@ object HiveExecutor extends Serializable {
     executeDeviceAccess(sqlContext, syncMode)
     executePayment(sqlContext, syncMode)
     executeBaseCourt(sqlContext, syncMode)
+    executeErpOrg(sqlContext, syncMode)
   }
 
   def executeICCard(sparkSession: SparkSession, mode: Int): Unit = {
@@ -190,7 +191,6 @@ object HiveExecutor extends Serializable {
 
     val tempResult = sparkSession.sql("SELECT rowkey, carnum, carEnergy(carnum) car_energy, carSubEnergy(carnum) car_sub_energy, stopTimeLevel(stopTime) stopTimeLevel, intimeLevel(intime) intimeLevel, timeDay(outtime) outtime, entermodetext, exitmodetext, carporttypetext, consumemoney, payedmoney, courtid FROM car_parking")
     tempResult.createOrReplaceTempView("car_parking")
-    tempResult.show()
 
     //机动车停车时长分布
     var resultDf = sparkSession.sql("SELECT stopTimeLevel, courtid, COUNT(DISTINCT rowkey) as countNum FROM car_parking GROUP BY stopTimeLevel, courtid")
@@ -296,7 +296,6 @@ object HiveExecutor extends Serializable {
 
     val tempResult = sparkSession.sql("SELECT rowkey, courtuuid, userTypeConverter(usertype) usertype, devicename, subdevicename, credencetype FROM device_auth")
     tempResult.createOrReplaceTempView("device_auth")
-    tempResult.show()
 
     //人员类型比例
     var resultDf = sparkSession.sql("SELECT usertype, courtuuid, credencetype, COUNT(DISTINCT rowkey) as countNum FROM device_auth GROUP BY usertype, credencetype, courtuuid")
@@ -401,8 +400,6 @@ object HiveExecutor extends Serializable {
 
     val tempResult = sparkSession.sql("SELECT rowkey, courtuuid, userid, userTypeConverter(usertype) usertype, devicename, updatetimeLevel(updatetime) updatetimeLevel, timeDay(updatetime) updatetimeDay, description from device_access")
     tempResult.createOrReplaceTempView("device_access")
-    tempResult.show()
-
 
     //人员类型趋势
     var resultDf = sparkSession.sql("SELECT usertype, updatetimeDay, courtuuid, COUNT(DISTINCT rowkey) as countNum FROM device_access GROUP BY usertype, updatetimeDay, courtuuid")
@@ -558,5 +555,48 @@ object HiveExecutor extends Serializable {
 
     val resultDf = sparkSession.sql("SELECT uuid, name, province_check(province) province, city, district, update_time from base_court")
     dbUtil.writeToMysql("192.168.3.99", 3306, "cbox_smartvillage", "cbox_smartvillage", "LGTAFUprfRnh", "base_court", resultDf, mode)
+  }
+
+  def executeErpOrg(sparkSession: SparkSession, mode: Int): Unit = {
+    var sql: String = ""
+
+    var dateFormat: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd")
+    var cal: Calendar = Calendar.getInstance()
+    cal.add(Calendar.DATE, -1)
+    var yesterday = dateFormat.format(cal.getTime())
+
+    if (mode == 0) {
+      //全量更新
+      sql = "SELECT uuid, name, parent_uuid, description, court_uuid, court_name, org_type, left(cast(update_time as VARCHAR), 10) as update_time " +
+        "FROM bigdata.v_mdc_erp_org where delete_flag = 1"
+    } else {
+      //增量更新，只拉取昨日数据
+      sql = "SELECT uuid, name, parent_uuid, description, court_uuid, court_name, org_type, left(cast(update_time as VARCHAR), 10) as update_time " +
+        "FROM bigdata.v_mdc_erp_org where delete_flag = 1" +
+        "WHERE left(cast(update_time as VARCHAR), 10) = '" + yesterday + "'"
+    }
+
+    sparkSession.udf.register("org_type_trans", (str: String) => {
+      try {
+        if (str == "1") {
+          "集团"
+        } else if (str == "2") {
+          "分公司"
+        } else if (str == "3") {
+          "项目"
+        } else {
+          "其他"
+        }
+      } catch {
+        case e: Exception => "其他"
+      }
+    })
+
+    val dbUtil = new DBUtil()
+    var df = dbUtil.readFromPgsql(sparkSession, "172.16.0.34", 5432, "hdsc_db", "hdsc_bigdata_read", "84AiCeqLiyAWOiVz", sql)
+    df.cache().createOrReplaceTempView("erp_org")
+
+    val resultDf = sparkSession.sql("SELECT uuid, name, parent_uuid, description, court_uuid, court_name, org_type_trans(org_type) org_type, update_time from erp_org")
+    dbUtil.writeToMysql("192.168.3.99", 3306, "cbox_smartvillage", "cbox_smartvillage", "LGTAFUprfRnh", "erp_org", resultDf, mode)
   }
 }
