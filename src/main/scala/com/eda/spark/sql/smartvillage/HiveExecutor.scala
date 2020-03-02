@@ -5,7 +5,9 @@ import java.text.SimpleDateFormat
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import org.apache.spark.sql.types.DataTypes
 import java.util.{Calendar, Date, Properties}
+
 import com.eda.spark.utils.DBUtil
+import org.apache.spark.rdd.RDD
 
 object HiveExecutor extends Serializable {
   def main(args: Array[String]): Unit = {
@@ -19,16 +21,13 @@ object HiveExecutor extends Serializable {
     if (today > "2020-02-25") { //上线发布日期
       syncMode = 1 //增量更新
     }
-    /*
+
     executeICCard(sqlContext, syncMode)
     executeCarParking(sqlContext, syncMode)
 //    executeDeviceAuth(sqlContext, syncMode)
     executeDeviceAccess(sqlContext, syncMode)
     executePayment(sqlContext, syncMode)
     executeBaseCourt(sqlContext, syncMode)
-    */
-
-    executeErpOrg(sqlContext, syncMode)
   }
 
   def executeICCard(sparkSession: SparkSession, mode: Int): Unit = {
